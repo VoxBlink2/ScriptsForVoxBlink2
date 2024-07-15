@@ -13,15 +13,12 @@ parser.add_argument('--num_workers',
                     type=int,
                     help="Multi-thread to facilate cropping process")
 parser.add_argument('--save_dir', 
-                    default='voxblink2', 
                     type=str,
                     help="where to save files")
-parser.add_argument('--timestamp_dir', 
-                    default='./resource/timestamps', 
+parser.add_argument('--timestamp_path', 
                     type=str,
                     help="save path of timestamps")
-parser.add_argument('--audio_dir', 
-                    default='videos', 
+parser.add_argument('--audio_root', 
                     type=str,
                     help="save path of audios")
 args = parser.parse_args()
@@ -71,13 +68,13 @@ def cut_audio(input_path, output_path, start_time, end_time):
 
 def crop_by_spks(spk2audios):
     for spk, audios in spk2audios.items():
-        tsf_spk = os.path.join(args.timestamp_dir,spk)
+        tsf_spk = os.path.join(args.timestamp_path,spk)
         if not os.path.exists(tsf_spk):
             logging.info(f"Spk dir {tsf_spk} of timestamp does not exist. Skipping...")
             continue
         for audio in audios:
             tsf_audio = os.path.join(tsf_spk, audio)
-            audio_path = os.path.join(args.audio_dir,spk,audio+'.wav')
+            audio_path = os.path.join(args.audio_root,spk,audio+'.wav')
             if not os.path.exists(tsf_audio):
                 logging.info(f"audio dir {tsf_audio} of timestamp does not exist. Skipping...")
                 continue

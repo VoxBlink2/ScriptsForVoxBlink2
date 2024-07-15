@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import argparse, numpy as np
+import argparse, numpy as np,os
 import torch, torch.nn as nn
 from spk_veri_metric import SVevaluation
 from torch.utils.data import DataLoader
@@ -7,10 +7,11 @@ from dataset import WavDataset
 from tqdm import tqdm
 from hyperpyyaml import load_hyperpyyaml
 
-parser = argparse.ArgumentParser(description="Speaker Embedding Extraction")
-parser.add_argument('--yaml_path', default='asv/conf/resnet34.yaml', type=str)
+parser = argparse.ArgumentParser(description="ASV evaluation")
+parser.add_argument('--yaml_path',required=True,  type=str)
 parser.add_argument('--device', default='cpu', type=str)
-parser.add_argument('--num_workers', default=0, type=int)
+parser.add_argument('--num_workers', default=10, type=int)
+parser.add_argument('--output_path', required=False, type=str)
 
 args = parser.parse_args()
 # feature
@@ -20,7 +21,6 @@ with open(args.yaml_path, 'r') as f:
 
 
 val_utt = [line.split()[0] for line in open('data/%s/wav.scp' % hparams['val_name'])]
-eer_cal = SVevaluation('data/%s/trials' % hparams['val_name'], val_utt,ptar=[0.01, 0.001])
 
 # dataset
 val_dataset = WavDataset(
@@ -30,6 +30,7 @@ val_dataset = WavDataset(
            'data/%s/wav.scp' % hparams['val_name']
         )
     ],
+    norm_type=hparams['norm_type']
 )
 val_dataloader = DataLoader(
     val_dataset,
@@ -39,11 +40,8 @@ val_dataloader = DataLoader(
 )
 
 model = hparams['model']
-model.load_state_dict(
-    torch.load(
-        hparams['ckpt_path'],map_location=args.device
-    ),strict=False
-)
+state_dict = torch.load(hparams['ckpt_path'],map_location=args.device)
+model.load_state_dict({k.replace('module.',''):v for k,v in state_dict.items()},strict=False)
 
 model = model.to(args.device)
 
@@ -53,9 +51,12 @@ embd_dict = {}
 with torch.no_grad():
     for j, (feat, utt) in enumerate(tqdm(val_dataloader)):
         embd = model(feat.to(args.device)).cpu().numpy()
+        embd_dict[utt[0]] = embd
         embd_stack = np.concatenate((embd_stack,embd))
-eer_cal.update_embd(embd_stack)
-eer, cost = eer_cal.eer_cost()
+if os.path.exists('data/%s/trials' % hparams['val_name']):
+    eer_cal = SVevaluation('data/%s/trials' % hparams['val_name'], val_utt,ptar=[0.01])
+    eer_cal.update_embd(embd_stack)
+    eer, cost = eer_cal.eer_cost()
+if args.output_path:
+    np.save(os.path.join(args.output_path,'embd.npy'),embd_dict,allow_pickle=True)
 print(eer,cost)
-
-

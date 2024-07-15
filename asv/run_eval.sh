@@ -6,5 +6,4 @@ else
 fi
 num_workers=4
 yaml_conf=conf/resnet34.yaml
-python ./eval_ckpt.py
---num_workers=${num_workers} --device=${device} --yaml_conf=${yaml_conf}
+python ./eval_ckpt.py --num_workers=${num_workers} --device=${device} --yaml_path=${yaml_conf}

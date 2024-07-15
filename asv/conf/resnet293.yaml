@@ -15,5 +15,5 @@ model: !new:modules.model_spk.ResNet293_based
   acoustic_dim: !ref <n_mels>
   featCal: !ref <featCal>
 
-ckpt_path: 'ckpt/resnet100/model_pt.pt'
-val_name: 'test_vox'
+ckpt_path: 'ckpt/resnet293/model_ft.pt'
+val_name: 'data/test_vox'

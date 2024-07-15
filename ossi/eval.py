@@ -1,7 +1,7 @@
 import numpy as np
 import torch,os,argparse
 from tqdm import tqdm
-from ossi.utils import save_dir_res
+from utils import save_dir_res
 parser = argparse.ArgumentParser(description='Process prompt search agent arguments')
 parser.add_argument('--data_path', 
                     type=str, 

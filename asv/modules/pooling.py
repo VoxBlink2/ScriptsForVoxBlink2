@@ -2,8 +2,9 @@ import torch, torch.nn as nn, torch.nn.functional as F
 
 class GSP(nn.Module):
     # GlobalStatsPool
-    def __init__(self,):
+    def __init__(self,in_planes,acoustic_dim):
         super(GSP, self).__init__()
+        self.out_dim = in_planes*8 * 2
 
     def forward(self, x):
         x = x.view(x.shape[0], x.shape[1], -1)
@@ -35,3 +36,17 @@ class ASP(nn.Module):
         x = x.view(x.size()[0], -1)
         return x
    
+class TSP(nn.Module):
+    # TemporalStatsPool
+    def __init__(self,in_planes,acoustic_dim):
+        super(TSP, self).__init__()
+        outmap_size = int(acoustic_dim/8)
+        self.out_dim = in_planes * 8 * outmap_size * 2
+    def forward(self, x):
+        out_mean = x.mean(dim=-1)
+        out_std = torch.sqrt(torch.var(x, dim=-1) + 1e-7)
+        out_mean = out_mean.flatten(start_dim=1)
+        out_std = out_std.flatten(start_dim=1)
+        out = torch.cat((out_mean, out_std), 1)
+        return out  
+    

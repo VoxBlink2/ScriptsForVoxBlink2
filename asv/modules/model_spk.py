@@ -75,149 +75,140 @@ import torch
 from torch import nn
 from torch.nn import Parameter
 import torch.nn.functional as F
+ 
+####################################################################
+##### ECAPA_TDNN #######################################
+####################################################################
 
-class SE_Res2Block(nn.Module):
-    
-    def __init__(self,k=3,d=2,s=8,channel=512,bottleneck=128):
-        super(SE_Res2Block,self).__init__()
-        self.k = k
-        self.d = d
-        self.s = s
-        if self.s == 1:
-            self.nums = 1
-        else:
-            self.nums = self.s - 1
-            
-        self.channel = channel
-        self.bottleneck = bottleneck
-        
-        self.conv1 = nn.Conv1d(self.channel,self.channel,kernel_size=1,dilation=1)
-        self.bn1 = nn.BatchNorm1d(self.channel)
-        
-        self.convs = []
-        self.bns = []
-        for i in range(self.s):
-            self.convs.append(nn.Conv1d(int(self.channel/self.s), int(self.channel/self.s), kernel_size=self.k, dilation=self.d, padding=self.d, bias=False,padding_mode='reflect'))
-            self.bns.append(nn.BatchNorm1d(int(self.channel/self.s)))
-            
-        self.convs = nn.ModuleList(self.convs)
-        self.bns = nn.ModuleList(self.bns)
-        
-        self.conv3 = nn.Conv1d(self.channel,self.channel,kernel_size=1,dilation=1)
-        self.bn3 = nn.BatchNorm1d(self.channel)
-        
-        self.fc1 = nn.Linear(self.channel,self.bottleneck,bias=True)
-        self.fc2 = nn.Linear(self.bottleneck,self.channel,bias=True)
-        
-    def forward(self,x):
+import math, torch, torchaudio
+import torch.nn as nn
+import torch.nn.functional as F
+from thop import profile
+
+class SEModule(nn.Module):
+    def __init__(self, channels, bottleneck=128):
+        super(SEModule, self).__init__()
+        self.se = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            nn.Conv1d(channels, bottleneck, kernel_size=1, padding=0),
+            nn.ReLU(),
+            # nn.BatchNorm1d(bottleneck), # I remove this layer
+            nn.Conv1d(bottleneck, channels, kernel_size=1, padding=0),
+            nn.Sigmoid(),
+            )
+
+    def forward(self, input):
+        x = self.se(input)
+        return input * x
+
+class Bottle2neck(nn.Module):
+
+    def __init__(self, inplanes, planes, kernel_size=None, dilation=None, scale = 8):
+        super(Bottle2neck, self).__init__()
+        width       = int(math.floor(planes / scale))
+        self.conv1  = nn.Conv1d(inplanes, width*scale, kernel_size=1)
+        self.bn1    = nn.BatchNorm1d(width*scale)
+        self.nums   = scale -1
+        convs       = []
+        bns         = []
+        num_pad = math.floor(kernel_size/2)*dilation
+        for i in range(self.nums):
+            convs.append(nn.Conv1d(width, width, kernel_size=kernel_size, dilation=dilation, padding=num_pad))
+            bns.append(nn.BatchNorm1d(width))
+        self.convs  = nn.ModuleList(convs)
+        self.bns    = nn.ModuleList(bns)
+        self.conv3  = nn.Conv1d(width*scale, planes, kernel_size=1)
+        self.bn3    = nn.BatchNorm1d(planes)
+        self.relu   = nn.ReLU()
+        self.width  = width
+        self.se     = SEModule(planes)
+
+    def forward(self, x):
         residual = x
-        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.conv1(x)
+        out = self.relu(out)
+        out = self.bn1(out)
 
-        spx = torch.split(out, int(self.channel/self.s), 1)
-        for i in range(1,self.nums+1):
-            if i==1:
-                sp = spx[i]
-            else:
-                sp = sp + spx[i]
-            sp = self.convs[i](sp)
-            sp = F.relu(self.bns[i](sp))
-            if i==1:
-                out = sp
-            else:
-                out = torch.cat((out, sp), 1)
+        spx = torch.split(out, self.width, 1)
+        for i in range(self.nums):
+          if i==0:
+            sp = spx[i]
+          else:
+            sp = sp + spx[i]
+          sp = self.convs[i](sp)
+          sp = self.relu(sp)
+          sp = self.bns[i](sp)
+          if i==0:
+            out = sp
+          else:
+            out = torch.cat((out, sp), 1)
+        out = torch.cat((out, spx[self.nums]),1)
 
-        if self.s != 1 :
-            out = torch.cat((out, spx[0]),1)
+        out = self.conv3(out)
+        out = self.relu(out)
+        out = self.bn3(out)
         
-        out = F.relu(self.bn3(self.conv3(out)))
-        out_mean = torch.mean(out,dim=2)
-        s_v = torch.sigmoid(self.fc2(F.relu(self.fc1(out_mean))))
-        out = out * s_v.unsqueeze(-1)
+        out = self.se(out)
         out += residual
-        #out = F.relu(out)
-        return out
+        return out 
 
 
-class Classic_Attention(nn.Module):
-    def __init__(self,input_dim, embed_dim, attn_dropout=0.0):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.attn_dropout = attn_dropout
-        self.lin_proj = nn.Linear(input_dim,embed_dim)
-        self.v = torch.nn.Parameter(torch.randn(embed_dim))
-    
-    def forward(self,inputs):
-        lin_out = self.lin_proj(inputs)
-        v_view = self.v.unsqueeze(0).expand(lin_out.size(0), len(self.v)).unsqueeze(2)
-        attention_weights = torch.tanh(lin_out.bmm(v_view).squeeze(-1))
-        attention_weights_normalized = F.softmax(attention_weights,1)
-        #attention_weights_normalized = F.softmax(attention_weights)
-        return attention_weights_normalized
-
-class Attentive_Statictics_Pooling(nn.Module):
-    
-    def __init__(self,channel=1536,R_dim_self_att=128):
-        super(Attentive_Statictics_Pooling,self).__init__()
-        
-        self.attention = Classic_Attention(channel,R_dim_self_att)
-    
-    def weighted_sd(self,inputs,attention_weights, mean):
-        el_mat_prod = torch.mul(inputs,attention_weights.unsqueeze(2).expand(-1,-1,inputs.shape[-1]))
-        hadmard_prod = torch.mul(inputs,el_mat_prod)
-        variance = torch.sum(hadmard_prod,1) - torch.mul(mean,mean)
-        return variance    
-    
-    def stat_attn_pool(self,inputs,attention_weights):
-        el_mat_prod = torch.mul(inputs,attention_weights.unsqueeze(2).expand(-1,-1,inputs.shape[-1]))
-        mean = torch.mean(el_mat_prod,1)
-        variance = self.weighted_sd(inputs,attention_weights,mean)
-        stat_pooling = torch.cat((mean,variance),1)
-        return stat_pooling
-    
-    def forward(self,x):
-        attn_weights = self.attention(x)
-        stat_pool_out = self.stat_attn_pool(x,attn_weights)
-        
-        return stat_pool_out
-    
 class ECAPA_TDNN(nn.Module):
-    
-    def __init__(self,in_dim,hidden_dim,scale,bottleneck,embedding_size,featCal):
-        
-        super(ECAPA_TDNN,self).__init__()
-        self.featCal = featCal
-        self.in_dim = in_dim
-        self.hidden_dim = hidden_dim
-        self.scale = scale
-        self.bottleneck = bottleneck
-        self.embedding_size = embedding_size
-        
-        self.conv1 = nn.Conv1d(in_dim,hidden_dim,kernel_size=5,dilation=1)
-        self.bn1 = nn.BatchNorm1d(hidden_dim)
-        self.block1 = SE_Res2Block(k=3,d=2,s=self.scale,channel=self.hidden_dim,bottleneck=self.bottleneck)
-        self.block2 = SE_Res2Block(k=3,d=3,s=self.scale,channel=self.hidden_dim,bottleneck=self.bottleneck)
-        self.block3 = SE_Res2Block(k=3,d=4,s=self.scale,channel=self.hidden_dim,bottleneck=self.bottleneck)
-        self.conv2 = nn.Conv1d(self.hidden_dim*3,self.hidden_dim*3,kernel_size=1,dilation=1)
-        
-        self.ASP = Attentive_Statictics_Pooling(channel=self.hidden_dim*3,R_dim_self_att=self.bottleneck)
-        self.bn2 = nn.BatchNorm1d(self.hidden_dim*3*2)
-        
-        self.fc = nn.Linear(self.hidden_dim*3*2,self.embedding_size)
-        self.bn3 = nn.BatchNorm1d(self.embedding_size)
-        
-    def forward(self,x):
-        x = self.featCal(x)
-        x = x.transpose(1,2)
-        y = F.relu(self.bn1(self.conv1(x)))
-        y_1 = self.block1(y)
-        y_2 = self.block2(y_1)
-        y_3 = self.block3(y_2)
-        out = torch.cat((y_1, y_2,y_3), 1)
-        out = F.relu(self.conv2(out))
-        out = self.bn2(self.ASP(out.transpose(1,2)))
-        out = self.bn3(self.fc(out))
-        return out
 
+    def __init__(self, C, featCal):
+
+        super(ECAPA_TDNN, self).__init__()
+        self.featCal = featCal
+        self.conv1  = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
+        self.relu   = nn.ReLU()
+        self.bn1    = nn.BatchNorm1d(C)
+        self.layer1 = Bottle2neck(C, C, kernel_size=3, dilation=2, scale=8)
+        self.layer2 = Bottle2neck(C, C, kernel_size=3, dilation=3, scale=8)
+        self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8)
+        # I fixed the shape of the output from MFA layer, that is close to the setting from ECAPA paper.
+        self.layer4 = nn.Conv1d(3*C, 1536, kernel_size=1)
+        self.attention = nn.Sequential(
+            nn.Conv1d(4608, 256, kernel_size=1),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Tanh(), # I add this layer
+            nn.Conv1d(256, 1536, kernel_size=1),
+            nn.Softmax(dim=2),
+            )
+        self.bn5 = nn.BatchNorm1d(3072)
+        self.fc6 = nn.Linear(3072, 192)
+        self.bn6 = nn.BatchNorm1d(192)
+
+
+    def forward(self, x):
+        x = self.featCal(x)
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.bn1(x)
+
+        x1 = self.layer1(x)
+        x2 = self.layer2(x+x1)
+        x3 = self.layer3(x+x1+x2)
+
+        x = self.layer4(torch.cat((x1,x2,x3),dim=1))
+        x = self.relu(x)
+
+        t = x.size()[-1]
+
+        global_x = torch.cat((x,torch.mean(x,dim=2,keepdim=True).repeat(1,1,t), torch.sqrt(torch.var(x,dim=2,keepdim=True).clamp(min=1e-4)).repeat(1,1,t)), dim=1)
+        
+        w = self.attention(global_x)
+
+        mu = torch.sum(x * w, dim=2)
+        sg = torch.sqrt( ( torch.sum((x**2) * w, dim=2) - mu**2 ).clamp(min=1e-4) )
+
+        x = torch.cat((mu,sg),1)
+        x = self.bn5(x)
+        x = self.fc6(x)
+        x = self.bn6(x)
+
+        return x
+    
 if __name__ == '__main__':
     model = ResNet34_based(64,'base',pooling_layer='GSP',embd_dim=256,acoustic_dim=80)
     input = torch.rand([1, 16000])

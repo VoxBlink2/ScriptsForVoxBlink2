@@ -2,10 +2,10 @@ n_mels: 80
 featCal: !new:modules.feat.logFbankCal
   sample_rate: 16000
   n_fft: 512
-  win_length: 25
-  hop_length: 10
+  win_length: 0.025
+  hop_length: 0.01
   n_mels: !ref <n_mels>
-  norm_type: 'std'
+norm_type: 'std'
 embd_dim: 256
 model: !new:modules.model_spk.ResNet34_based
   in_planes: 64
@@ -14,5 +14,5 @@ model: !new:modules.model_spk.ResNet34_based
   embd_dim: !ref <embd_dim>
   acoustic_dim: !ref <n_mels>
   featCal: !ref <featCal>
-ckpt_path: 'ckpt/resnet34/model_pt.pt'
-val_name: 'test_vox'
+ckpt_path: 'ckpt/resnet34/model_ft.pt'
+val_name: 'data/test_vox'
