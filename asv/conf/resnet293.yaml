@@ -1,0 +1,19 @@
+n_mels: 80
+featCal: !new:modules.feat.logFbankCal
+  sample_rate: 16000
+  n_fft: 512
+  win_length: 25
+  hop_length: 10
+  n_mels: !ref <n_mels>
+  norm_type: 'max'
+embd_dim: 256
+model: !new:modules.model_spk.ResNet293_based
+  in_planes: 64
+  block_type: 'SimAM' 
+  pooling_layer: 'ASP' 
+  embd_dim: !ref <embd_dim>
+  acoustic_dim: !ref <n_mels>
+  featCal: !ref <featCal>
+
+ckpt_path: 'ckpt/resnet100/model_pt.pt'
+val_name: 'test_vox'

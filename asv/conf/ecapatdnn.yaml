@@ -1,0 +1,18 @@
+n_mels: 80
+featCal: !new:modules.feat.logFbankCal
+  sample_rate: 16000
+  n_fft: 512
+  win_length: 25
+  hop_length: 10
+  n_mels: !ref <n_mels>
+  norm_type: 'std'
+embd_dim: 192
+model: !new:modules.model_spk.ECAPA_TDNN
+  in_dim: !ref <n_mels>
+  hidden_dim: 1024
+  scale: 8
+  bottleneck: 128
+  embedding_size: !ref <embd_dim>
+  featCal: !ref <featCal>
+ckpt_path: 'ckpt/ecapatdnn/model_pt.pt'
+val_name: 'test_vox'
