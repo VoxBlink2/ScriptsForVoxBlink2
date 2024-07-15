@@ -65,11 +65,11 @@ We provide two alternatives for you to download video or audio-only segments. We
 
 * For Audio-Visual
 ```python
-python downloader.py --base_dir $BASE_DIR$ --num_workers 4 --mode audio
+python downloader.py --base_dir ${BASE_DIR} --num_workers 4 --mode audio
 ```
 * For Audio-Only
 ```python
-python downloader.py --base_dir $BASE_DIR$ --num_workers 4 --mode audio
+python downloader.py --base_dir ${BASE_DIR} --num_workers 4 --mode audio
 ```
 
 4. Crop Audio/Videos
@@ -87,7 +87,7 @@ python cropper_audio.py --save_dir ${SAVE_PATH_AUDIO} --timestamp_path meta --au
 We provide simple scripts for model evaluation of ASV, just execute `run_eval.sh` in `asv` folder. For more, please look at [asv](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/asv).
 
 ## Open-Set Speaker Identification Evaluation
-We provide simple scripts for model evaluation of our proposed task: Open-Set Speaker-Identification(OSSI). just execute `run_eval_ossi.sh` in `ossi` folder. For more, please look at [asv](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/ossi).
+We provide simple scripts for model evaluation of our proposed task: Open-Set Speaker-Identification(OSSI). just execute `run_eval_ossi.sh` in `ossi` folder. For more, please look at [ossi](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/ossi).
 
 ## License
 
