@@ -31,7 +31,7 @@ def job_video(urls,spk):
         'noplaylist': True,
         'ignoreerrors': True,
         'max_sleep_interval': 0.2,
-        'verbose':False,
+        'verbose':True,
         'quiet':True,
         'download_ranges': download_range_func(None, [(0, 60)]),
         'postprocessors': [{
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     print("* Download Starts *")
     print("*"*15)
     os.makedirs(args.base_dir,exist_ok=True)
-    spk2videos_loc = "resource/data/spk2videos"
+    spk2videos_loc = "data/spk2videos"
     if not os.path.exists(spk2videos_loc):
         logging.error("Video list not exist!!")
         sys.exit()
