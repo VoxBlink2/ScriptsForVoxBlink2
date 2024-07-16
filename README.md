@@ -7,6 +7,7 @@ Let's start with obtaining the [resource](https://drive.google.com/drive/folders
 ```bash
 tar -zxvf spk_info.tar.gz
 tar -zxvf vb2_meta.tar.gz 
+tar -zxvf asr_res.tar.gz
 ```
 
 ## File structure
