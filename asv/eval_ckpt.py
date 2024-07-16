@@ -20,14 +20,14 @@ with open(args.yaml_path, 'r') as f:
     hparams = load_hyperpyyaml(yaml_strings)
 
 
-val_utt = [line.split()[0] for line in open('data/%s/wav.scp' % hparams['val_name'])]
+val_utt = [line.split()[0] for line in open('%s/wav.scp' % hparams['val_name'])]
 
 # dataset
 val_dataset = WavDataset(
     [
         line.split()
         for line in open(
-           'data/%s/wav.scp' % hparams['val_name']
+           '%s/wav.scp' % hparams['val_name']
         )
     ],
     norm_type=hparams['norm_type']
@@ -53,8 +53,8 @@ with torch.no_grad():
         embd = model(feat.to(args.device)).cpu().numpy()
         embd_dict[utt[0]] = embd
         embd_stack = np.concatenate((embd_stack,embd))
-if os.path.exists('data/%s/trials' % hparams['val_name']):
-    eer_cal = SVevaluation('data/%s/trials' % hparams['val_name'], val_utt,ptar=[0.01])
+if os.path.exists('%s/trials' % hparams['val_name']):
+    eer_cal = SVevaluation('%s/trials' % hparams['val_name'], val_utt,ptar=[0.01])
     eer_cal.update_embd(embd_stack)
     eer, cost = eer_cal.eer_cost()
 if args.output_path:
