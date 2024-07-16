@@ -1,6 +1,6 @@
 # The VoxBlink2 Dataset
 
-The VoxBlink2 dataset is a Large Scale speaker recognition dataset with 100K+ speakers obtained from YouTube platform. This repository provides guidelines to build the corpus and relative resources to reproduce the results in our article . For more introduction, please see [cite](https://VoxBlink2.github.io). 
+The VoxBlink2 dataset is a Large Scale speaker recognition dataset with 100K+ speakers obtained from YouTube platform. This repository provides guidelines to build the corpus and relative resources to reproduce the results in our article . For more introduction, please see [cite](https://VoxBlink2.github.io). If you find this repository helpful to your research, don't forget to give us star🌟.
 
 ## Resource 
 Let's start with obtaining the [resource](https://drive.google.com/drive/folders/1lzumPsnl5yEaMP9g2bFbSKINLZ-QRJVP?usp=sharing) files and decompressing tar-files.
@@ -24,6 +24,10 @@ tar -zxvf vb2_meta.tar.gz
 |     |---- resnet100 # [Folder]
 |     |---- resnet293 # [Folder]
 |---- spk_info             # video'tags of speakers：
+|     |---- id000000	
+|     |---- id000001	
+|     |---- ...
+|---- asr_res            # ASR annotations by Whisper：
 |     |---- id000000	
 |     |---- id000001	
 |     |---- ...
