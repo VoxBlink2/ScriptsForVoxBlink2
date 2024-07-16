@@ -12,24 +12,20 @@ parser.add_argument('--num_workers',
                     default=1, 
                     type=int,
                     help="Multi-thread to facilate cropping process")
-parser.add_argument('--data_path', 
-                    default=1, 
-                    type=int,
-                    help="Multi-thread to facilate cropping process")
-parser.add_argument('--save_dir_audio', 
-                    default='voxblink2/audio', 
+parser.add_argument('--save_dir_audio',
+                    required=True, 
                     type=str,
                     help="where to save wav files")
-parser.add_argument('--save_dir_video', 
-                    default='voxblink2/video', 
+parser.add_argument('--save_dir_video',
+                    required=True, 
                     type=str,
                     help="where to save wav files")
 parser.add_argument('--timestamp_path', 
-                    default='resource/timestamps', 
+                    required=True,
                     type=str,
                     help="save path of timestamps")
 parser.add_argument('--video_root', 
-                    default='videos', 
+                    required=True,
                     type=str,
                     help="save path of videos")
 args = parser.parse_args()
@@ -112,7 +108,7 @@ if __name__ == '__main__':
     print("*"*15)
     os.makedirs(args.save_dir_audio,exist_ok=True)
     os.makedirs(args.save_dir_video,exist_ok=True)
-    spk2videos_loc = "resource/data/spk2videos"
+    spk2videos_loc = "data/spk2videos"
     assert os.path.exists(spk2videos_loc)
     spk2videos = {line.split()[0]:line.strip().split()[1:] for line in open(spk2videos_loc)}
     workers = min(args.num_workers,len(spk2videos))

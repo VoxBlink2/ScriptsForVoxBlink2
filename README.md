@@ -69,7 +69,7 @@ We provide two alternatives for you to download video or audio-only segments. We
 
 * For Audio-Visual
 ```python
-python downloader.py --base_dir ${BASE_DIR} --num_workers 4 --mode audio
+python downloader.py --base_dir ${BASE_DIR} --num_workers 4 --mode video
 ```
 * For Audio-Only
 ```python

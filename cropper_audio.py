@@ -13,12 +13,15 @@ parser.add_argument('--num_workers',
                     type=int,
                     help="Multi-thread to facilate cropping process")
 parser.add_argument('--save_dir', 
+                    required=True,
                     type=str,
                     help="where to save files")
 parser.add_argument('--timestamp_path', 
+                    required=True,
                     type=str,
                     help="save path of timestamps")
 parser.add_argument('--audio_root', 
+                    required=True,
                     type=str,
                     help="save path of audios")
 args = parser.parse_args()
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     print("*"*15)
     os.makedirs(args.save_dir,exist_ok=True)
     os.makedirs(os.path.join(args.save_dir,"audio"),exist_ok=True)
-    spk2audios_loc = "resource/data/spk2videos"
+    spk2audios_loc = "data/spk2videos"
     assert os.path.exists(spk2audios_loc)
     spk2audios = {line.split()[0]:line.strip().split()[1:] for line in open(spk2audios_loc)}
     workers = min(args.num_workers,len(spk2audios))
