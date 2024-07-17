@@ -108,14 +108,13 @@ Important Note: Our released dataset only contains annotation data, including th
 Please cite the paper below if you make use of the dataset:
 
 ```
-@INPROCEEDINGS{10446780,
-  author={Lin, Yuke and Qin, Xiaoyi and Zhao, Guoqing and Cheng, Ming and Jiang, Ning and Wu, Haiying and Li, Ming},
-  booktitle={ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)}, 
-  title={Voxblink: A Large Scale Speaker Verification Dataset on Camera}, 
-  year={2024},
-  volume={},
-  number={},
-  pages={10271-10275},
-  keywords={Training;Video on demand;Purification;Pipelines;Signal processing;Web sites;Noise measurement;Speaker Verification;Dataset;Large-scale;Multi-modal},
-  doi={10.1109/ICASSP48485.2024.10446780}}
+@misc{lin2024voxblink2100kspeakerrecognition,
+      title={VoxBlink2: A 100K+ Speaker Recognition Corpus and the Open-Set Speaker-Identification Benchmark}, 
+      author={Yuke Lin and Ming Cheng and Fulin Zhang and Yingying Gao and Shilei Zhang and Ming Li},
+      year={2024},
+      eprint={2407.11510},
+      archivePrefix={arXiv},
+      primaryClass={eess.AS},
+      url={https://arxiv.org/abs/2407.11510}, 
+}
 ```
