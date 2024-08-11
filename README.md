@@ -24,6 +24,7 @@ tar -zxvf asr_res.tar.gz
 |     |---- resnet34 # [Folder]
 |     |---- resnet100 # [Folder]
 |     |---- resnet293 # [Folder]
+|     |---- face_model # [Folder]
 |---- spk_info             # video'tags of speakers：
 |     |---- id000000	
 |     |---- id000001	
@@ -39,6 +40,11 @@ tar -zxvf asr_res.tar.gz
 |                 |---- ...
 |           |---- ... 
 |     |---- ...	
+|---- face_id            # face_identification modules
+|     |---- api.py # corresponding inference functions
+|     |---- arcface.py # corresponding model definitions
+|     |---- README.md 
+|     |---- test.py # Test
 |---- ossi            # video'tags of speakers：
 |     |---- eval.py # recipe for evaluate openset speaker identification
 |     |---- utils.py 
@@ -86,6 +92,11 @@ python cropper_video.py --save_dir_audio ${SAVE_PATH_AUDIO} --save_dir_video ${S
 ```python
 python cropper_audio.py --save_dir ${SAVE_PATH_AUDIO} --timestamp_path meta --audio_root=${BASE_DIR} --num_workers 4
 ```
+
+## FID Evaluation
+
+We provide simple scripts of our face identification model, which is adopted in curating VoxBlink2. For more, please look at [asv](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/face_id).
+
 
 ## SV Evaluation
 
