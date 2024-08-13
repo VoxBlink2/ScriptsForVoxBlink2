@@ -95,7 +95,7 @@ python cropper_audio.py --save_dir ${SAVE_PATH_AUDIO} --timestamp_path meta --au
 
 ## FID Evaluation
 
-We provide simple scripts of our face identification model, which is adopted in curating VoxBlink2. For more, please look at [asv](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/face_id).
+We provide simple scripts of our face identification model, which is adopted in curating VoxBlink2. For more, please look at [fid](https://github.com/VoxBlink2/ScriptsForVoxBlink2/tree/main/face_id).
 
 
 ## SV Evaluation
